@@ -23,6 +23,8 @@
 import ipaddress
 import subprocess
 
+from tabulate import tabulate
+
 
 def host_ping(vars):
     for args in vars:
@@ -48,6 +50,7 @@ VARS = [
     ['ping', '-D', '-O', str(ipaddress.ip_address('192.168.0.72'))]
 ]
 
+
 host_ping(VARS)
 
 
@@ -63,7 +66,6 @@ def host_range_ping(subnet):
                 break
 
             result = line.decode('utf-8')
-            print(line)
             if 'no answer yet' in result:
                 print(f'Узел {args[-1]} недоступен')
             else:
@@ -73,3 +75,31 @@ def host_range_ping(subnet):
 
 
 host_range_ping('8.8.8.0/28')
+
+def host_range_ping_tab(hosts):
+    table = {'Reachable': [], 'Unreachable': []}
+    for ip in hosts:
+        args = ['ping', '-O', str(ip)]
+        ping = subprocess.Popen(args, stdout=subprocess.PIPE)
+
+        limit = 0
+
+        for line in ping.stdout:
+            if limit > 1:
+                break
+
+            result = line.decode('utf-8')
+
+            if 'no answer yet' in result:
+                table['Reachable'].append(ip)
+            else:
+                table['Unreachable'].append(ip)
+
+            limit += 1
+
+    print(tabulate(table, headers='keys', tablefmt="pipe"))
+
+
+HOSTS = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
+
+host_range_ping_tab(HOSTS)
